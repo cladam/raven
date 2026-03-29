@@ -35,11 +35,27 @@ export interface OptionsConfig {
   distractorStrategy: DistractorStrategy;
 }
 
+// ---- Game mode types ----
+
+export interface GameModeEntry {
+  label: string;
+  description: string;
+  timeLimitMs: number; // 0 = no limit (infinite)
+}
+
+export type GameModeId = "infinite" | "comfortable" | "standard" | "challenge";
+
+export interface GameModeConfig {
+  default: GameModeId;
+  modes: Record<GameModeId, GameModeEntry>;
+}
+
 // ---- Timing types ----
 
 export interface TimingConfig {
   correctDelayMs: number;
   wrongDelayMs: number;
+  timeoutDelayMs: number;
 }
 
 // ---- Scoring types ----
@@ -47,7 +63,9 @@ export interface TimingConfig {
 export interface ScoringConfig {
   skipResetsStreak: boolean;
   wrongResetsStreak: boolean;
+  timeoutResetsStreak: boolean;
   countWrongAsAttempt: boolean;
+  countTimeoutAsAttempt: boolean;
 }
 
 // ---- Rendering types ----
@@ -71,6 +89,7 @@ export interface PuzzleConfig {
   attributes: AttributesConfig;
   grid: GridConfig;
   options: OptionsConfig;
+  gameMode: GameModeConfig;
   timing: TimingConfig;
   scoring: ScoringConfig;
   rendering: RenderingConfig;
@@ -93,14 +112,42 @@ const defaults: PuzzleConfig = {
     count: 6,
     distractorStrategy: "single-swap-then-multi-swap",
   },
+  gameMode: {
+    default: "infinite",
+    modes: {
+      infinite: {
+        label: "∞ Infinite",
+        description: "No time limit — solve at your own pace",
+        timeLimitMs: 0,
+      },
+      comfortable: {
+        label: "🟢 Comfortable",
+        description: "30 s per puzzle — enough to reason carefully",
+        timeLimitMs: 30000,
+      },
+      standard: {
+        label: "🟡 Standard",
+        description: "20 s per puzzle — matches speeded research protocols",
+        timeLimitMs: 20000,
+      },
+      challenge: {
+        label: "🔴 Challenge",
+        description: "10 s per puzzle — forces pattern recognition",
+        timeLimitMs: 10000,
+      },
+    },
+  },
   timing: {
     correctDelayMs: 800,
     wrongDelayMs: 1000,
+    timeoutDelayMs: 1200,
   },
   scoring: {
     skipResetsStreak: true,
     wrongResetsStreak: true,
+    timeoutResetsStreak: true,
     countWrongAsAttempt: true,
+    countTimeoutAsAttempt: true,
   },
   rendering: {
     matrixCellSize: 80,
@@ -167,6 +214,16 @@ export function missingCellIndex(cfg: PuzzleConfig): number {
     return Math.floor(Math.random() * total);
   }
   return total - 1; // "last"
+}
+
+/**
+ * Returns the time limit in ms for a given game mode id, or 0 for infinite.
+ */
+export function timeLimitForMode(
+  cfg: PuzzleConfig,
+  modeId: GameModeId,
+): number {
+  return cfg.gameMode.modes[modeId]?.timeLimitMs ?? 0;
 }
 
 // ---- Build & export the merged config ----

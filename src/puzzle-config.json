@@ -25,15 +25,44 @@
     "distractorStrategy": "single-swap-then-multi-swap"
   },
 
+  "gameMode": {
+    "default": "infinite",
+    "modes": {
+      "infinite": {
+        "label": "∞ Infinite",
+        "description": "No time limit — solve at your own pace",
+        "timeLimitMs": 0
+      },
+      "comfortable": {
+        "label": "🟢 Comfortable",
+        "description": "30 s per puzzle — enough to reason carefully",
+        "timeLimitMs": 30000
+      },
+      "standard": {
+        "label": "🟡 Standard",
+        "description": "20 s per puzzle — matches speeded research protocols",
+        "timeLimitMs": 20000
+      },
+      "challenge": {
+        "label": "🔴 Challenge",
+        "description": "10 s per puzzle — forces pattern recognition",
+        "timeLimitMs": 10000
+      }
+    }
+  },
+
   "timing": {
     "correctDelayMs": 800,
-    "wrongDelayMs": 1000
+    "wrongDelayMs": 1000,
+    "timeoutDelayMs": 1200
   },
 
   "scoring": {
     "skipResetsStreak": true,
     "wrongResetsStreak": true,
-    "countWrongAsAttempt": true
+    "timeoutResetsStreak": true,
+    "countWrongAsAttempt": true,
+    "countTimeoutAsAttempt": true
   },
 
   "rendering": {
@@ -45,9 +74,9 @@
       "large": 0.88
     },
     "colorMap": {
-      "black":  { "fill": "#222222", "stroke": "#000000" },
-      "gray":   { "fill": "#999999", "stroke": "#666666" },
-      "white":  { "fill": "#ffffff", "stroke": "#333333" }
+      "black": { "fill": "#222222", "stroke": "#000000" },
+      "gray": { "fill": "#999999", "stroke": "#666666" },
+      "white": { "fill": "#ffffff", "stroke": "#333333" }
     },
     "strokeWidth": 2
   }
