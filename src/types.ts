@@ -2,9 +2,9 @@
 
 export type ShapeType = "circle" | "square" | "triangle";
 
-// ---- Color types (fill colors for shapes) ----
+// ---- Colour types (fill colours for shapes) ----
 
-export type ColorType = "black" | "gray" | "white";
+export type ColorType = "black" | "grey" | "white";
 
 // ---- Size types ----
 

@@ -6,7 +6,7 @@
     },
     "color": {
       "enabled": true,
-      "values": ["black", "gray", "white"]
+      "values": ["black", "grey", "white"]
     },
     "size": {
       "enabled": true,
@@ -79,7 +79,7 @@
     },
     "colorMap": {
       "black": { "fill": "#222222", "stroke": "#000000" },
-      "gray": { "fill": "#999999", "stroke": "#666666" },
+      "grey": { "fill": "#999999", "stroke": "#666666" },
       "white": { "fill": "#ffffff", "stroke": "#333333" }
     },
     "strokeWidth": 2

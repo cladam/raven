@@ -101,7 +101,7 @@ export interface PuzzleConfig {
 const defaults: PuzzleConfig = {
   attributes: {
     shape: { enabled: true, values: ["circle", "square", "triangle"] },
-    color: { enabled: true, values: ["black", "gray", "white"] },
+    color: { enabled: true, values: ["black", "grey", "white"] },
     size: { enabled: true, values: ["small", "medium", "large"] },
   },
   grid: {
@@ -160,7 +160,7 @@ const defaults: PuzzleConfig = {
     sizeScales: { small: 0.28, medium: 0.55, large: 0.88 },
     colorMap: {
       black: { fill: "#222222", stroke: "#000000" },
-      gray: { fill: "#999999", stroke: "#666666" },
+      grey: { fill: "#999999", stroke: "#666666" },
       white: { fill: "#ffffff", stroke: "#333333" },
     },
     strokeWidth: 2,

@@ -225,7 +225,7 @@ const RavenApp: React.FC = () => {
   // Timer bar fraction (1 = full, 0 = empty)
   const timerFraction = isTimed && timeLimit > 0 ? timeLeftMs / timeLimit : 1;
 
-  // Timer bar color: teal > amber > red based on remaining time
+  // Timer bar colour: teal > amber > red based on remaining time
   let timerBarColor = "#5a9b80";
   if (isTimed) {
     if (timerFraction <= 0.25) {
@@ -283,7 +283,7 @@ const RavenApp: React.FC = () => {
             {accuracy >= 90
               ? "🏆 Outstanding"
               : accuracy >= 75
-                ? "🌟 Great job"
+                ? "🌟 Well done"
                 : accuracy >= 50
                   ? "👍 Good effort"
                   : "💪 Keep practising"}
@@ -315,7 +315,7 @@ const RavenApp: React.FC = () => {
             >
               Raven's Progressive Matrices
             </a>
-            . Each row &amp; column is a Latin square for shape, color, and
+            . Each row &amp; column is a Latin square for shape, colour, and
             size.
           </p>
         </footer>
@@ -474,7 +474,7 @@ const RavenApp: React.FC = () => {
 
         {/* Instructions */}
         <p className="instructions">
-          Each shape, color, and size appears <strong>exactly once</strong> in
+          Each shape, colour, and size appears <strong>exactly once</strong> in
           every row and column. Select the missing piece:
         </p>
 
@@ -531,7 +531,7 @@ const RavenApp: React.FC = () => {
           >
             Raven's Progressive Matrices
           </a>
-          . Each row &amp; column is a Latin square for shape, color, and size.
+          . Each row &amp; column is a Latin square for shape, colour, and size.
         </p>
       </footer>
     </div>
