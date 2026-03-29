@@ -1,0 +1,54 @@
+{
+  "attributes": {
+    "shape": {
+      "enabled": true,
+      "values": ["circle", "square", "triangle"]
+    },
+    "color": {
+      "enabled": true,
+      "values": ["black", "gray", "white"]
+    },
+    "size": {
+      "enabled": true,
+      "values": ["small", "medium", "large"]
+    }
+  },
+
+  "grid": {
+    "rows": 3,
+    "cols": 3,
+    "missingCell": "last"
+  },
+
+  "options": {
+    "count": 6,
+    "distractorStrategy": "single-swap-then-multi-swap"
+  },
+
+  "timing": {
+    "correctDelayMs": 800,
+    "wrongDelayMs": 1000
+  },
+
+  "scoring": {
+    "skipResetsStreak": true,
+    "wrongResetsStreak": true,
+    "countWrongAsAttempt": true
+  },
+
+  "rendering": {
+    "matrixCellSize": 80,
+    "optionCellSize": 64,
+    "sizeScales": {
+      "small": 0.28,
+      "medium": 0.55,
+      "large": 0.88
+    },
+    "colorMap": {
+      "black":  { "fill": "#222222", "stroke": "#000000" },
+      "gray":   { "fill": "#999999", "stroke": "#666666" },
+      "white":  { "fill": "#ffffff", "stroke": "#333333" }
+    },
+    "strokeWidth": 2
+  }
+}

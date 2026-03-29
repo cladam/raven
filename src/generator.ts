@@ -1,30 +1,17 @@
-import { ShapeType, ColorType, SizeType, CellData, Matrix, AnswerOption, Puzzle, Permutation } from './types';
+import config, { enabledAttributes, missingCellIndex } from "./config";
+import { CellData, Matrix, AnswerOption, Puzzle } from "./types";
 
-// All possible values for each attribute
-const SHAPES: ShapeType[] = ['circle', 'square', 'triangle'];
-const COLORS: ColorType[] = ['black', 'gray', 'white'];
-const SIZES: SizeType[] = ['small', 'medium', 'large'];
+// ---- Types internal to the generator ----
 
-// All 6 permutations of [0, 1, 2]
-const ALL_PERMUTATIONS: Permutation[] = [
-  [0, 1, 2],
-  [0, 2, 1],
-  [1, 0, 2],
-  [1, 2, 0],
-  [2, 0, 1],
-  [2, 1, 0],
-];
+// A permutation is an ordering of indices, length === grid.cols
+type Permutation = number[];
 
-/**
- * Pick a random element from an array.
- */
+// ---- Utility helpers ----
+
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/**
- * Shuffle an array in place using Fisher-Yates and return it.
- */
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -34,73 +21,126 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// ---- Permutation helpers ----
+
 /**
- * Checks whether a set of 3 row permutations forms a valid "Distribution of Three"
- * for a given attribute. In a valid distribution, each column also contains all 3
- * distinct values (i.e., the 3x3 grid is a Latin square for that attribute).
- *
- * Each row permutation maps column index -> attribute index.
- * For each column c, the set { rowPerms[0][c], rowPerms[1][c], rowPerms[2][c] }
- * must equal {0, 1, 2}.
+ * Generate all permutations of [0 .. n-1].
+ * For n = 3 this gives 6 permutations; for n = 4 it gives 24, etc.
  */
-function isLatinSquare(rowPerms: Permutation[]): boolean {
-  for (let col = 0; col < 3; col++) {
-    const vals = new Set([rowPerms[0][col], rowPerms[1][col], rowPerms[2][col]]);
-    if (vals.size !== 3) return false;
+function allPermutations(n: number): Permutation[] {
+  if (n === 0) return [[]];
+  const result: Permutation[] = [];
+
+  function recurse(current: number[], remaining: number[]) {
+    if (remaining.length === 0) {
+      result.push([...current]);
+      return;
+    }
+    for (let i = 0; i < remaining.length; i++) {
+      current.push(remaining[i]);
+      const next = [...remaining.slice(0, i), ...remaining.slice(i + 1)];
+      recurse(current, next);
+      current.pop();
+    }
+  }
+
+  const indices = Array.from({ length: n }, (_, i) => i);
+  recurse([], indices);
+  return result;
+}
+
+/**
+ * Check whether a set of row permutations forms a Latin square
+ * (each column also contains every value exactly once).
+ */
+function isLatinSquare(rowPerms: Permutation[], cols: number): boolean {
+  for (let col = 0; col < cols; col++) {
+    const vals = new Set(rowPerms.map((row) => row[col]));
+    if (vals.size !== rowPerms.length) return false;
   }
   return true;
 }
 
 /**
- * Generate a valid 3x3 Latin square arrangement by picking 3 row permutations
- * that also satisfy the column constraint.
- *
- * Returns an array of 3 Permutations (one per row), where each permutation
- * maps column index -> attribute value index.
+ * Generate a Latin square of size `rows × cols` (must be equal for a proper
+ * Latin square). Returns an array of `rows` permutations, each of length `cols`,
+ * where every row is a permutation of [0..cols-1] and every column contains
+ * each value exactly once.
  */
-function generateLatinSquare(): Permutation[] {
-  // Pick a random first row
-  const row0 = pickRandom(ALL_PERMUTATIONS);
+function generateLatinSquare(rows: number, cols: number): Permutation[] {
+  const perms = allPermutations(cols);
 
-  // Find all valid (row1, row2) combinations
-  const validCombos: [Permutation, Permutation][] = [];
-  for (const row1 of ALL_PERMUTATIONS) {
-    if (row1 === row0) continue; // rows must differ for Latin square
-    for (const row2 of ALL_PERMUTATIONS) {
-      if (row2 === row0 || row2 === row1) continue;
-      if (isLatinSquare([row0, row1, row2])) {
-        validCombos.push([row1, row2]);
-      }
+  // Build row by row, backtracking if no valid continuation exists.
+  function build(chosen: Permutation[]): Permutation[] | null {
+    if (chosen.length === rows) {
+      return isLatinSquare(chosen, cols) ? chosen : null;
     }
+
+    const candidates = shuffle(perms);
+    for (const candidate of candidates) {
+      // Quick check: does this candidate conflict with any column so far?
+      let valid = true;
+      for (let col = 0; col < cols; col++) {
+        for (const prev of chosen) {
+          if (prev[col] === candidate[col]) {
+            valid = false;
+            break;
+          }
+        }
+        if (!valid) break;
+      }
+      if (!valid) continue;
+
+      const result = build([...chosen, candidate]);
+      if (result) return result;
+    }
+    return null;
   }
 
-  const [row1, row2] = pickRandom(validCombos);
-  return [row0, row1, row2];
+  const result = build([]);
+  if (!result) {
+    // Fallback: identity square (should never happen for n >= 1)
+    return Array.from({ length: rows }, (_, i) =>
+      Array.from({ length: cols }, (_, j) => (i + j) % cols),
+    );
+  }
+  return result;
 }
 
+// ---- Matrix generation ----
+
 /**
- * Generate a Distribution of Three puzzle.
+ * Generate the 2D grid of CellData using the config.
  *
- * "Distribution of Three" means that for each visual attribute (shape, color, size),
- * each of the 3 possible values appears exactly once in every row and every column.
- * This is essentially a Latin square constraint applied independently to each attribute.
+ * For each *enabled* attribute we generate an independent Latin square that
+ * determines how that attribute's values are distributed across the grid.
  *
- * We generate three independent Latin squares — one for shape, one for color, one for size —
- * and combine them to produce the 3x3 matrix of cells.
+ * For *disabled* attributes every cell gets the first value in the list
+ * (effectively making that dimension invisible).
  */
 export function generateDistributionMatrix(): Matrix {
-  const shapeSquare = generateLatinSquare();
-  const colorSquare = generateLatinSquare();
-  const sizeSquare = generateLatinSquare();
+  const { rows, cols } = config.grid;
+  const attrs = config.attributes;
+  const active = enabledAttributes(config);
+
+  // Generate one Latin square per enabled attribute
+  const squares: Record<string, Permutation[]> = {};
+  for (const attr of active) {
+    squares[attr] = generateLatinSquare(rows, cols);
+  }
 
   const cells: CellData[] = [];
 
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 3; col++) {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const shapeIdx = squares["shape"] ? squares["shape"][row][col] : 0;
+      const colorIdx = squares["color"] ? squares["color"][row][col] : 0;
+      const sizeIdx = squares["size"] ? squares["size"][row][col] : 0;
+
       cells.push({
-        shape: SHAPES[shapeSquare[row][col]],
-        color: COLORS[colorSquare[row][col]],
-        size: SIZES[sizeSquare[row][col]],
+        shape: attrs.shape.values[shapeIdx] as CellData["shape"],
+        color: attrs.color.values[colorIdx] as CellData["color"],
+        size: attrs.size.values[sizeIdx] as CellData["size"],
       });
     }
   }
@@ -108,81 +148,162 @@ export function generateDistributionMatrix(): Matrix {
   return cells as unknown as Matrix;
 }
 
+// ---- Distractor generation ----
+
+function cellKey(c: CellData): string {
+  return `${c.shape}|${c.color}|${c.size}`;
+}
+
 /**
- * Generate distractor options for the answer bank.
- *
- * We always include the correct answer (matrix[8]) plus 5 distractors,
- * for a total of 6 options. Distractors are created by varying one or more
- * attributes of the correct answer so they look plausible but are wrong.
+ * Build distractors by swapping a single enabled attribute at a time.
  */
-export function generateOptions(matrix: Matrix): AnswerOption[] {
-  const correct = matrix[8];
+function singleSwapDistractors(
+  correct: CellData,
+  seen: Set<string>,
+): CellData[] {
+  const result: CellData[] = [];
+  const active = enabledAttributes(config);
+  const attrs = config.attributes;
 
-  const distractors: CellData[] = [];
-  const seen = new Set<string>();
-  const key = (c: CellData) => `${c.shape}-${c.color}-${c.size}`;
-  seen.add(key(correct));
-
-  // Strategy 1: swap one attribute at a time
-  for (const shape of SHAPES) {
-    const cell: CellData = { ...correct, shape };
-    const k = key(cell);
-    if (!seen.has(k)) {
-      distractors.push(cell);
-      seen.add(k);
-    }
-  }
-  for (const color of COLORS) {
-    const cell: CellData = { ...correct, color };
-    const k = key(cell);
-    if (!seen.has(k)) {
-      distractors.push(cell);
-      seen.add(k);
-    }
-  }
-  for (const size of SIZES) {
-    const cell: CellData = { ...correct, size };
-    const k = key(cell);
-    if (!seen.has(k)) {
-      distractors.push(cell);
-      seen.add(k);
-    }
-  }
-
-  // Strategy 2: swap two attributes for extra difficulty
-  for (const shape of SHAPES) {
-    for (const color of COLORS) {
-      const cell: CellData = { shape, color, size: correct.size };
-      const k = key(cell);
+  for (const attr of active) {
+    for (const val of attrs[attr].values) {
+      const cell: CellData = { ...correct, [attr]: val };
+      const k = cellKey(cell);
       if (!seen.has(k)) {
-        distractors.push(cell);
+        result.push(cell);
         seen.add(k);
       }
     }
   }
+  return result;
+}
 
-  // Pick 5 distractors from the pool (shuffled)
-  const shuffledDistractors = shuffle(distractors).slice(0, 5);
+/**
+ * Build distractors by swapping two enabled attributes simultaneously.
+ */
+function multiSwapDistractors(
+  correct: CellData,
+  seen: Set<string>,
+): CellData[] {
+  const result: CellData[] = [];
+  const active = enabledAttributes(config);
+  const attrs = config.attributes;
 
-  // Build final options array
+  // All pairs of enabled attributes
+  for (let i = 0; i < active.length; i++) {
+    for (let j = i + 1; j < active.length; j++) {
+      const attrA = active[i];
+      const attrB = active[j];
+      for (const valA of attrs[attrA].values) {
+        for (const valB of attrs[attrB].values) {
+          const cell: CellData = { ...correct, [attrA]: valA, [attrB]: valB };
+          const k = cellKey(cell);
+          if (!seen.has(k)) {
+            result.push(cell);
+            seen.add(k);
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Build distractors by generating fully random attribute combinations.
+ */
+function randomCombinationDistractors(
+  seen: Set<string>,
+  count: number,
+): CellData[] {
+  const result: CellData[] = [];
+  const attrs = config.attributes;
+  let attempts = 0;
+  const maxAttempts = count * 20;
+
+  while (result.length < count && attempts < maxAttempts) {
+    attempts++;
+    const cell: CellData = {
+      shape: pickRandom(attrs.shape.values) as CellData["shape"],
+      color: pickRandom(attrs.color.values) as CellData["color"],
+      size: pickRandom(attrs.size.values) as CellData["size"],
+    };
+    const k = cellKey(cell);
+    if (!seen.has(k)) {
+      result.push(cell);
+      seen.add(k);
+    }
+  }
+  return result;
+}
+
+/**
+ * Generate the answer options (1 correct + N-1 distractors).
+ */
+export function generateOptions(
+  matrix: Matrix,
+  missing: number,
+): AnswerOption[] {
+  const correct = matrix[missing];
+  const needed = config.options.count - 1; // number of distractors
+  const strategy = config.options.distractorStrategy;
+
+  const seen = new Set<string>();
+  seen.add(cellKey(correct));
+
+  let pool: CellData[] = [];
+
+  switch (strategy) {
+    case "single-swap-only":
+      pool = singleSwapDistractors(correct, seen);
+      break;
+
+    case "random-combination":
+      pool = randomCombinationDistractors(seen, needed);
+      break;
+
+    case "single-swap-then-multi-swap":
+    default:
+      pool = [
+        ...singleSwapDistractors(correct, seen),
+        ...multiSwapDistractors(correct, seen),
+      ];
+      break;
+  }
+
+  // Pick `needed` distractors from the pool
+  const distractors = shuffle(pool).slice(0, needed);
+
+  // If we still don't have enough (edge case), fill with random combos
+  if (distractors.length < needed) {
+    const extra = randomCombinationDistractors(
+      seen,
+      needed - distractors.length,
+    );
+    distractors.push(...extra);
+  }
+
   const options: AnswerOption[] = [
     { id: 0, cell: correct, isCorrect: true },
-    ...shuffledDistractors.map((cell, i) => ({
+    ...distractors.map((cell, i) => ({
       id: i + 1,
       cell,
       isCorrect: false,
     })),
   ];
 
-  // Shuffle so the correct answer isn't always first
+  // Shuffle and re-assign sequential ids
   return shuffle(options).map((opt, i) => ({ ...opt, id: i }));
 }
 
+// ---- Public API ----
+
 /**
- * Generate a complete puzzle: matrix + answer options.
+ * Generate a complete puzzle: matrix + missing cell index + answer options.
  */
-export function generatePuzzle(): Puzzle {
+export function generatePuzzle(): Puzzle & { missingIndex: number } {
   const matrix = generateDistributionMatrix();
-  const options = generateOptions(matrix);
-  return { matrix, options };
+  const missing = missingCellIndex(config);
+  const options = generateOptions(matrix, missing);
+  return { matrix, options, missingIndex: missing };
 }

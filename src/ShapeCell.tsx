@@ -1,22 +1,11 @@
 import React from "react";
-import { CellData, ShapeType, ColorType, SizeType } from "./types";
+import { CellData, ShapeType } from "./types";
+import config from "./config";
 
 interface ShapeCellProps {
   data: CellData;
   cellSize?: number;
 }
-
-const SIZE_SCALE: Record<SizeType, number> = {
-  small: 0.28,
-  medium: 0.55,
-  large: 0.88,
-};
-
-const COLOR_MAP: Record<ColorType, { fill: string; stroke: string }> = {
-  black: { fill: "#222222", stroke: "#000000" },
-  gray: { fill: "#999999", stroke: "#666666" },
-  white: { fill: "#ffffff", stroke: "#333333" },
-};
 
 function renderShape(
   shape: ShapeType,
@@ -25,9 +14,8 @@ function renderShape(
   radius: number,
   fill: string,
   stroke: string,
+  strokeWidth: number,
 ): React.ReactNode {
-  const strokeWidth = 2;
-
   switch (shape) {
     case "circle":
       return (
@@ -83,9 +71,14 @@ function renderShape(
 
 const ShapeCell: React.FC<ShapeCellProps> = ({ data, cellSize = 80 }) => {
   const { shape, color, size } = data;
-  const scale = SIZE_SCALE[size];
+  const { sizeScales, colorMap, strokeWidth } = config.rendering;
+
+  const scale = sizeScales[size] ?? 0.55;
   const radius = (cellSize / 2) * scale;
-  const { fill, stroke } = COLOR_MAP[color];
+
+  const colorEntry = colorMap[color] ?? { fill: "#888888", stroke: "#444444" };
+  const { fill, stroke } = colorEntry;
+
   const center = cellSize / 2;
 
   return (
@@ -95,7 +88,7 @@ const ShapeCell: React.FC<ShapeCellProps> = ({ data, cellSize = 80 }) => {
       viewBox={`0 0 ${cellSize} ${cellSize}`}
       style={{ display: "block" }}
     >
-      {renderShape(shape, center, center, radius, fill, stroke)}
+      {renderShape(shape, center, center, radius, fill, stroke, strokeWidth)}
     </svg>
   );
 };

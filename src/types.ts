@@ -1,43 +1,51 @@
-// Shape types
-export type ShapeType = 'circle' | 'square' | 'triangle';
+// ---- Shape types ----
 
-// Color types (fill colors for shapes)
-export type ColorType = 'black' | 'gray' | 'white';
+export type ShapeType = "circle" | "square" | "triangle";
 
-// Size types
-export type SizeType = 'small' | 'medium' | 'large';
+// ---- Color types (fill colors for shapes) ----
 
-// A single cell in the 3x3 matrix
+export type ColorType = "black" | "gray" | "white";
+
+// ---- Size types ----
+
+export type SizeType = "small" | "medium" | "large";
+
+// ---- Cell ----
+
+/** A single cell in the matrix grid. */
 export interface CellData {
   shape: ShapeType;
   color: ColorType;
   size: SizeType;
 }
 
-// The full 3x3 matrix is an array of 9 cells
-// Index 0-2 = row 1, 3-5 = row 2, 6-8 = row 3
-// Index 8 (row 3, col 3) is the missing cell the user must identify
-export type Matrix = [
-  CellData, CellData, CellData,
-  CellData, CellData, CellData,
-  CellData, CellData, CellData
-];
+// ---- Matrix ----
 
-// An answer option presented to the user
+/**
+ * The full grid represented as a flat array of CellData.
+ * Length === grid.rows * grid.cols (read from config).
+ * Index mapping: row * cols + col.
+ */
+export type Matrix = CellData[];
+
+// ---- Answer options ----
+
+/** A single answer option presented to the user. */
 export interface AnswerOption {
   id: number;
   cell: CellData;
   isCorrect: boolean;
 }
 
-// Puzzle state
+// ---- Puzzle ----
+
+/** Everything needed to render and play a single puzzle. */
 export interface Puzzle {
   matrix: Matrix;
   options: AnswerOption[];
 }
 
-// Attributes that can be distributed across rows/columns
-export type AttributeName = 'shape' | 'color' | 'size';
+// ---- Attribute helpers ----
 
-// A permutation is an ordering of indices [0, 1, 2]
-export type Permutation = [number, number, number];
+/** The attribute dimensions that can be toggled on/off in config. */
+export type AttributeName = "shape" | "color" | "size";

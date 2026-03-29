@@ -2,16 +2,25 @@ import React, { useState, useCallback } from "react";
 import { Puzzle } from "./types";
 import { generatePuzzle } from "./generator";
 import ShapeCell from "./ShapeCell";
+import config from "./config";
 
 type FeedbackState = "idle" | "correct" | "wrong";
 
+interface PuzzleWithMissing extends Puzzle {
+  missingIndex: number;
+}
+
 const RavenApp: React.FC = () => {
-  const [puzzle, setPuzzle] = useState<Puzzle>(() => generatePuzzle());
+  const [puzzle, setPuzzle] = useState<PuzzleWithMissing>(() =>
+    generatePuzzle(),
+  );
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
+
+  const { timing, scoring, rendering, grid } = config;
 
   const nextPuzzle = useCallback(() => {
     setPuzzle(generatePuzzle());
@@ -21,39 +30,49 @@ const RavenApp: React.FC = () => {
 
   const handleAnswer = useCallback(
     (optionId: number) => {
-      if (feedback !== "idle") return; // Prevent double-clicking
+      if (feedback !== "idle") return;
 
       const option = puzzle.options.find((o) => o.id === optionId);
       if (!option) return;
 
       setSelectedId(optionId);
-      setTotal((t) => t + 1);
+
+      if (scoring.countWrongAsAttempt || option.isCorrect) {
+        setTotal((t) => t + 1);
+      }
 
       if (option.isCorrect) {
         setScore((s) => s + 1);
         setStreak((s) => s + 1);
         setFeedback("correct");
-        // Auto-advance after a brief delay
         setTimeout(() => {
           nextPuzzle();
-        }, 800);
+        }, timing.correctDelayMs);
       } else {
-        setStreak(0);
+        if (scoring.wrongResetsStreak) {
+          setStreak(0);
+        }
         setFeedback("wrong");
-        // Allow retry after a brief delay
         setTimeout(() => {
           setFeedback("idle");
           setSelectedId(null);
-        }, 1000);
+        }, timing.wrongDelayMs);
       }
     },
-    [feedback, puzzle, nextPuzzle],
+    [feedback, puzzle, nextPuzzle, timing, scoring],
   );
 
   const handleSkip = useCallback(() => {
-    setStreak(0);
+    if (scoring.skipResetsStreak) {
+      setStreak(0);
+    }
     nextPuzzle();
-  }, [nextPuzzle]);
+  }, [nextPuzzle, scoring]);
+
+  const totalCells = grid.rows * grid.cols;
+  const gridColsStyle = `repeat(${grid.cols}, 1fr)`;
+  const optionCols = Math.min(puzzle.options.length, 3);
+  const optionColsStyle = `repeat(${optionCols}, 1fr)`;
 
   return (
     <div className="app-container">
@@ -82,45 +101,52 @@ const RavenApp: React.FC = () => {
       </div>
 
       <div className="puzzle-area">
-        {/* Feedback overlay */}
         {feedback !== "idle" && (
           <div className={`feedback-banner ${feedback}`}>
             {feedback === "correct" ? "✓ Correct!" : "✗ Try again"}
           </div>
         )}
 
-        {/* 3×3 Matrix Grid */}
-        <div className="matrix-grid">
-          {puzzle.matrix.map((cell, index) => (
-            <div
-              key={index}
-              className={`cell-container ${index === 8 ? "missing-cell" : ""}`}
-            >
-              {index === 8 ? (
-                <div className="question-mark">
-                  <span>?</span>
-                </div>
-              ) : (
-                <ShapeCell data={cell} cellSize={80} />
-              )}
-            </div>
-          ))}
+        <div
+          className="matrix-grid"
+          style={{ gridTemplateColumns: gridColsStyle }}
+        >
+          {Array.from({ length: totalCells }, (_, index) => {
+            const isMissing = index === puzzle.missingIndex;
+            return (
+              <div
+                key={index}
+                className={`cell-container ${isMissing ? "missing-cell" : ""}`}
+              >
+                {isMissing ? (
+                  <div className="question-mark">
+                    <span>?</span>
+                  </div>
+                ) : (
+                  <ShapeCell
+                    data={puzzle.matrix[index]}
+                    cellSize={rendering.matrixCellSize}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Instructions */}
         <p className="instructions">
           Each shape, color, and size appears <strong>exactly once</strong> in
           every row and column. Select the missing piece:
         </p>
 
-        {/* Answer Options */}
-        <div className="answer-bank">
+        <div
+          className="answer-bank"
+          style={{ gridTemplateColumns: optionColsStyle }}
+        >
           {puzzle.options.map((option) => {
             let btnClass = "option-button";
             if (selectedId === option.id) {
               btnClass += feedback === "correct" ? " correct" : " wrong";
             }
-            // After a correct answer, also highlight the correct one if user picked wrong
             if (feedback === "wrong" && option.isCorrect) {
               btnClass += " reveal-correct";
             }
@@ -133,7 +159,10 @@ const RavenApp: React.FC = () => {
                 disabled={feedback !== "idle"}
                 title={`${option.cell.size} ${option.cell.color} ${option.cell.shape}`}
               >
-                <ShapeCell data={option.cell} cellSize={64} />
+                <ShapeCell
+                  data={option.cell}
+                  cellSize={rendering.optionCellSize}
+                />
               </button>
             );
           })}
@@ -142,11 +171,6 @@ const RavenApp: React.FC = () => {
         <button className="skip-button" onClick={handleSkip}>
           Skip →
         </button>
-
-        {/* Debug helper (hidden by default, uncomment to debug) */}
-        {/* <div className="debug">
-          <p>Answer: {correctAnswer.size} {correctAnswer.color} {correctAnswer.shape}</p>
-        </div> */}
       </div>
 
       <footer className="app-footer">

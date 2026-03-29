@@ -148,7 +148,6 @@ body {
 /* ===== 3×3 Matrix Grid ===== */
 .matrix-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     max-width: 300px;
     width: 100%;
@@ -219,7 +218,6 @@ body {
 /* ===== Answer Bank ===== */
 .answer-bank {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     max-width: 320px;
     width: 100%;
