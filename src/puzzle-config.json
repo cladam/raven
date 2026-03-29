@@ -31,22 +31,26 @@
       "infinite": {
         "label": "∞ Infinite",
         "description": "No time limit — solve at your own pace",
-        "timeLimitMs": 0
+        "timeLimitMs": 0,
+        "maxPuzzles": 0
       },
       "comfortable": {
         "label": "🟢 Comfortable",
-        "description": "30 s per puzzle — enough to reason carefully",
-        "timeLimitMs": 30000
+        "description": "30 s × 12 puzzles — enough to reason carefully",
+        "timeLimitMs": 30000,
+        "maxPuzzles": 12
       },
       "standard": {
         "label": "🟡 Standard",
-        "description": "20 s per puzzle — matches speeded research protocols",
-        "timeLimitMs": 20000
+        "description": "20 s × 12 puzzles — speeded research protocol",
+        "timeLimitMs": 20000,
+        "maxPuzzles": 12
       },
       "challenge": {
         "label": "🔴 Challenge",
-        "description": "10 s per puzzle — forces pattern recognition",
-        "timeLimitMs": 10000
+        "description": "10 s × 12 puzzles — forces pattern recognition",
+        "timeLimitMs": 10000,
+        "maxPuzzles": 12
       }
     }
   },

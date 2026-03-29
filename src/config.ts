@@ -41,6 +41,7 @@ export interface GameModeEntry {
   label: string;
   description: string;
   timeLimitMs: number; // 0 = no limit (infinite)
+  maxPuzzles: number; // 0 = unlimited
 }
 
 export type GameModeId = "infinite" | "comfortable" | "standard" | "challenge";
@@ -119,21 +120,25 @@ const defaults: PuzzleConfig = {
         label: "∞ Infinite",
         description: "No time limit — solve at your own pace",
         timeLimitMs: 0,
+        maxPuzzles: 0,
       },
       comfortable: {
         label: "🟢 Comfortable",
-        description: "30 s per puzzle — enough to reason carefully",
+        description: "30 s × 12 puzzles — enough to reason carefully",
         timeLimitMs: 30000,
+        maxPuzzles: 12,
       },
       standard: {
         label: "🟡 Standard",
-        description: "20 s per puzzle — matches speeded research protocols",
+        description: "20 s × 12 puzzles — speeded research protocol",
         timeLimitMs: 20000,
+        maxPuzzles: 12,
       },
       challenge: {
         label: "🔴 Challenge",
-        description: "10 s per puzzle — forces pattern recognition",
+        description: "10 s × 12 puzzles — forces pattern recognition",
         timeLimitMs: 10000,
+        maxPuzzles: 12,
       },
     },
   },

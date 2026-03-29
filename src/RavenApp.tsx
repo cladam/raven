@@ -16,9 +16,12 @@ const RavenApp: React.FC = () => {
   );
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
+  const [puzzleNum, setPuzzleNum] = useState(1);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [sessionComplete, setSessionComplete] = useState(false);
 
   // Game mode
   const [modeId, setModeId] = useState<GameModeId>(
@@ -34,7 +37,9 @@ const RavenApp: React.FC = () => {
   const { timing, scoring, rendering, grid, gameMode } = config;
   const currentMode = gameMode.modes[modeId];
   const timeLimit = currentMode.timeLimitMs;
+  const maxPuzzles = currentMode.maxPuzzles;
   const isTimed = timeLimit > 0;
+  const hasLimit = maxPuzzles > 0;
 
   // ---- Timer logic ----
 
@@ -60,7 +65,7 @@ const RavenApp: React.FC = () => {
       } else {
         setTimeLeftMs(remaining);
       }
-    }, 50); // update ~20fps for smooth bar
+    }, 50);
   }, [isTimed, timeLimit, clearTimer]);
 
   // Handle timeout
@@ -68,9 +73,8 @@ const RavenApp: React.FC = () => {
     if (!isTimed) return;
     if (feedback !== "idle") return;
     if (timeLeftMs > 0) return;
-    if (deadlineRef.current === 0) return; // not started yet
+    if (deadlineRef.current === 0) return;
 
-    // Time ran out
     setFeedback("timeout");
     if (scoring.timeoutResetsStreak) {
       setStreak(0);
@@ -85,7 +89,7 @@ const RavenApp: React.FC = () => {
     if (feedback !== "timeout") return;
 
     const id = setTimeout(() => {
-      advancePuzzle();
+      advanceOrFinish();
     }, timing.timeoutDelayMs);
 
     return () => clearTimeout(id);
@@ -94,14 +98,22 @@ const RavenApp: React.FC = () => {
 
   // ---- Puzzle lifecycle ----
 
-  const advancePuzzle = useCallback(() => {
+  const advanceOrFinish = useCallback(() => {
+    if (hasLimit && puzzleNum >= maxPuzzles) {
+      clearTimer();
+      setFeedback("idle");
+      setSessionComplete(true);
+      return;
+    }
     setPuzzle(generatePuzzle());
+    setPuzzleNum((n) => n + 1);
     setFeedback("idle");
     setSelectedId(null);
-  }, []);
+  }, [hasLimit, puzzleNum, maxPuzzles, clearTimer]);
 
   // Start timer whenever puzzle changes or mode changes
   useEffect(() => {
+    if (sessionComplete) return;
     if (isTimed && feedback === "idle") {
       startTimer();
     } else if (!isTimed) {
@@ -110,7 +122,14 @@ const RavenApp: React.FC = () => {
     }
     return () => clearTimer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzle, modeId]);
+  }, [puzzle, modeId, sessionComplete]);
+
+  // Track best streak
+  useEffect(() => {
+    if (streak > bestStreak) {
+      setBestStreak(streak);
+    }
+  }, [streak, bestStreak]);
 
   // ---- Handlers ----
 
@@ -133,7 +152,7 @@ const RavenApp: React.FC = () => {
         setStreak((s) => s + 1);
         setFeedback("correct");
         setTimeout(() => {
-          advancePuzzle();
+          advanceOrFinish();
         }, timing.correctDelayMs);
       } else {
         if (scoring.wrongResetsStreak) {
@@ -143,7 +162,6 @@ const RavenApp: React.FC = () => {
         setTimeout(() => {
           setFeedback("idle");
           setSelectedId(null);
-          // Restart timer for retry
           if (isTimed) {
             startTimer();
           }
@@ -153,7 +171,7 @@ const RavenApp: React.FC = () => {
     [
       feedback,
       puzzle,
-      advancePuzzle,
+      advanceOrFinish,
       timing,
       scoring,
       clearTimer,
@@ -167,18 +185,33 @@ const RavenApp: React.FC = () => {
     if (scoring.skipResetsStreak) {
       setStreak(0);
     }
-    advancePuzzle();
-  }, [advancePuzzle, scoring, clearTimer]);
+    if (hasLimit && puzzleNum >= maxPuzzles) {
+      setTotal((t) => t + 1);
+      setSessionComplete(true);
+      return;
+    }
+    setTotal((t) => t + 1);
+    setPuzzle(generatePuzzle());
+    setPuzzleNum((n) => n + 1);
+    setFeedback("idle");
+    setSelectedId(null);
+  }, [scoring, clearTimer, hasLimit, puzzleNum, maxPuzzles]);
 
   const handleModeChange = useCallback((newMode: GameModeId) => {
     setModeId(newMode);
     setShowModeSelector(false);
-    // Reset stats on mode change
+    resetSession();
+  }, []);
+
+  const resetSession = useCallback(() => {
     setScore(0);
     setTotal(0);
+    setPuzzleNum(1);
     setStreak(0);
+    setBestStreak(0);
     setFeedback("idle");
     setSelectedId(null);
+    setSessionComplete(false);
     setPuzzle(generatePuzzle());
   }, []);
 
@@ -193,17 +226,104 @@ const RavenApp: React.FC = () => {
   const timerFraction = isTimed && timeLimit > 0 ? timeLeftMs / timeLimit : 1;
 
   // Timer bar color: teal > amber > red based on remaining time
-  let timerBarColor = "#5a9b80"; // MutedTeal
+  let timerBarColor = "#5a9b80";
   if (isTimed) {
     if (timerFraction <= 0.25) {
-      timerBarColor = "#b35f5f"; // MutedRed
+      timerBarColor = "#b35f5f";
     } else if (timerFraction <= 0.5) {
-      timerBarColor = "#c08a3e"; // QuietAmber
+      timerBarColor = "#c08a3e";
     }
   }
 
   // Format time display
   const timeDisplaySec = Math.ceil(timeLeftMs / 1000);
+
+  // Accuracy
+  const accuracy = total === 0 ? 0 : Math.round((score / total) * 100);
+
+  // ---- Session complete screen ----
+
+  if (sessionComplete) {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <h1>Raven's Progressive Matrices</h1>
+          <p className="subtitle">Distribution of Three</p>
+        </header>
+
+        <div className="session-complete">
+          <h2 className="session-title">Session Complete</h2>
+          <p className="session-mode">{currentMode.label}</p>
+
+          <div className="session-results">
+            <div className="result-row">
+              <span className="result-label">Score</span>
+              <span className="result-value result-score">
+                {score} / {maxPuzzles}
+              </span>
+            </div>
+            <div className="result-row">
+              <span className="result-label">Accuracy</span>
+              <span className="result-value">
+                {total === 0 ? "—" : `${accuracy}%`}
+              </span>
+            </div>
+            <div className="result-row">
+              <span className="result-label">Total attempts</span>
+              <span className="result-value">{total}</span>
+            </div>
+            <div className="result-row">
+              <span className="result-label">Best streak</span>
+              <span className="result-value">🔥 {bestStreak}</span>
+            </div>
+          </div>
+
+          {/* Performance rating */}
+          <div className="session-rating">
+            {accuracy >= 90
+              ? "🏆 Outstanding"
+              : accuracy >= 75
+                ? "🌟 Great job"
+                : accuracy >= 50
+                  ? "👍 Good effort"
+                  : "💪 Keep practising"}
+          </div>
+
+          <div className="session-actions">
+            <button className="play-again-button" onClick={resetSession}>
+              Play Again
+            </button>
+            <button
+              className="change-mode-button"
+              onClick={() => {
+                resetSession();
+                setShowModeSelector(true);
+              }}
+            >
+              Change Mode
+            </button>
+          </div>
+        </div>
+
+        <footer className="app-footer">
+          <p>
+            Inspired by{" "}
+            <a
+              href="https://en.wikipedia.org/wiki/Raven%27s_Progressive_Matrices"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Raven's Progressive Matrices
+            </a>
+            . Each row &amp; column is a Latin square for shape, color, and
+            size.
+          </p>
+        </footer>
+      </div>
+    );
+  }
+
+  // ---- Active puzzle screen ----
 
   return (
     <div className="app-container">
@@ -244,12 +364,21 @@ const RavenApp: React.FC = () => {
         )}
       </div>
 
-      {/* Stats Bar */}
+      {/* Progress + Stats Bar */}
       <div className="stats-bar">
+        {hasLimit && (
+          <div className="stat">
+            <span className="stat-label">Puzzle</span>
+            <span className="stat-value">
+              {puzzleNum}/{maxPuzzles}
+            </span>
+          </div>
+        )}
         <div className="stat">
           <span className="stat-label">Score</span>
           <span className="stat-value">
-            {score}/{total}
+            {score}
+            {hasLimit ? `/${maxPuzzles}` : `/${total}`}
           </span>
         </div>
         <div className="stat">
@@ -259,7 +388,7 @@ const RavenApp: React.FC = () => {
         <div className="stat">
           <span className="stat-label">Accuracy</span>
           <span className="stat-value">
-            {total === 0 ? "—" : `${Math.round((score / total) * 100)}%`}
+            {total === 0 ? "—" : `${accuracy}%`}
           </span>
         </div>
         {isTimed && (
@@ -271,6 +400,18 @@ const RavenApp: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Progress Bar (for capped sessions) */}
+      {hasLimit && (
+        <div className="progress-bar-track">
+          <div
+            className="progress-bar-fill"
+            style={{
+              width: `${((puzzleNum - 1) / maxPuzzles) * 100}%`,
+            }}
+          />
+        </div>
+      )}
 
       {/* Timer Bar */}
       {isTimed && (
@@ -309,7 +450,6 @@ const RavenApp: React.FC = () => {
               >
                 {isMissing ? (
                   feedback === "timeout" ? (
-                    // Reveal the correct answer on timeout
                     <div className="reveal-answer">
                       <ShapeCell
                         data={puzzle.matrix[index]}
