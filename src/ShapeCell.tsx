@@ -1,5 +1,5 @@
-import React from 'react';
-import { CellData, ShapeType, ColorType, SizeType } from './types';
+import React from "react";
+import { CellData, ShapeType, ColorType, SizeType } from "./types";
 
 interface ShapeCellProps {
   data: CellData;
@@ -7,15 +7,15 @@ interface ShapeCellProps {
 }
 
 const SIZE_SCALE: Record<SizeType, number> = {
-  small: 0.4,
-  medium: 0.6,
-  large: 0.85,
+  small: 0.28,
+  medium: 0.55,
+  large: 0.88,
 };
 
 const COLOR_MAP: Record<ColorType, { fill: string; stroke: string }> = {
-  black: { fill: '#222222', stroke: '#000000' },
-  gray: { fill: '#999999', stroke: '#666666' },
-  white: { fill: '#ffffff', stroke: '#333333' },
+  black: { fill: "#222222", stroke: "#000000" },
+  gray: { fill: "#999999", stroke: "#666666" },
+  white: { fill: "#ffffff", stroke: "#333333" },
 };
 
 function renderShape(
@@ -24,12 +24,12 @@ function renderShape(
   cy: number,
   radius: number,
   fill: string,
-  stroke: string
+  stroke: string,
 ): React.ReactNode {
   const strokeWidth = 2;
 
   switch (shape) {
-    case 'circle':
+    case "circle":
       return (
         <circle
           cx={cx}
@@ -41,7 +41,7 @@ function renderShape(
         />
       );
 
-    case 'square': {
+    case "square": {
       const side = radius * 1.7;
       return (
         <rect
@@ -56,7 +56,7 @@ function renderShape(
       );
     }
 
-    case 'triangle': {
+    case "triangle": {
       const h = radius * 1.8;
       const halfBase = radius * 1.1;
       const topY = cy - h * 0.55;
@@ -65,7 +65,7 @@ function renderShape(
         `${cx},${topY}`,
         `${cx - halfBase},${bottomY}`,
         `${cx + halfBase},${bottomY}`,
-      ].join(' ');
+      ].join(" ");
       return (
         <polygon
           points={points}
@@ -93,7 +93,7 @@ const ShapeCell: React.FC<ShapeCellProps> = ({ data, cellSize = 80 }) => {
       width={cellSize}
       height={cellSize}
       viewBox={`0 0 ${cellSize} ${cellSize}`}
-      style={{ display: 'block' }}
+      style={{ display: "block" }}
     >
       {renderShape(shape, center, center, radius, fill, stroke)}
     </svg>
