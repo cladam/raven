@@ -2,7 +2,17 @@
   "attributes": {
     "shape": {
       "enabled": true,
-      "values": ["circle", "square", "triangle"]
+      "values": [
+        "circle",
+        "square",
+        "triangle",
+        "diamond",
+        "pentagon",
+        "hexagon",
+        "star",
+        "cross",
+        "arrow"
+      ]
     },
     "color": {
       "enabled": true,
@@ -23,6 +33,10 @@
     "shapeCount": {
       "enabled": false,
       "values": ["1", "2", "3"]
+    },
+    "fillPattern": {
+      "enabled": false,
+      "values": ["solid", "hatched", "dotted", "crossHatch"]
     }
   },
 

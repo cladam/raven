@@ -1,6 +1,15 @@
 // ---- Shape types ----
 
-export type ShapeType = "circle" | "square" | "triangle";
+export type ShapeType =
+  | "circle"
+  | "square"
+  | "triangle"
+  | "diamond"
+  | "pentagon"
+  | "hexagon"
+  | "star"
+  | "cross"
+  | "arrow";
 
 // ---- Colour types (fill colours for shapes) ----
 
@@ -12,7 +21,12 @@ export type SizeType = "small" | "medium" | "large";
 
 // ---- Inner-line types (line pattern drawn inside the shape) ----
 
-export type InnerLineType = "none" | "horizontal" | "vertical" | "diagonal";
+export type InnerLineType =
+  | "none"
+  | "horizontal"
+  | "vertical"
+  | "diagonal"
+  | "cross";
 
 // ---- Rotation types (rotation in degrees) ----
 
@@ -21,6 +35,10 @@ export type RotationType = "0" | "120" | "240";
 // ---- Shape-count types (number of shape copies in the cell) ----
 
 export type ShapeCountType = "1" | "2" | "3";
+
+// ---- Fill-pattern types (texture pattern drawn inside the shape) ----
+
+export type FillPatternType = "solid" | "hatched" | "dotted" | "crossHatch";
 
 // ---- Cell ----
 
@@ -32,6 +50,7 @@ export interface CellData {
   innerLine: InnerLineType;
   rotation: RotationType;
   shapeCount: ShapeCountType;
+  fillPattern: FillPatternType;
 }
 
 // ---- Matrix ----
@@ -69,4 +88,5 @@ export type AttributeName =
   | "size"
   | "innerLine"
   | "rotation"
-  | "shapeCount";
+  | "shapeCount"
+  | "fillPattern";

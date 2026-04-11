@@ -14,6 +14,7 @@ export interface AttributesConfig {
   innerLine: AttributeConfig;
   rotation: AttributeConfig;
   shapeCount: AttributeConfig;
+  fillPattern: AttributeConfig;
 }
 
 // ---- Grid types ----
@@ -105,12 +106,29 @@ export interface PuzzleConfig {
 
 const defaults: PuzzleConfig = {
   attributes: {
-    shape: { enabled: true, values: ["circle", "square", "triangle"] },
+    shape: {
+      enabled: true,
+      values: [
+        "circle",
+        "square",
+        "triangle",
+        "diamond",
+        "pentagon",
+        "hexagon",
+        "star",
+        "cross",
+        "arrow",
+      ],
+    },
     color: { enabled: true, values: ["black", "grey", "white"] },
     size: { enabled: true, values: ["small", "medium", "large"] },
     innerLine: { enabled: false, values: ["none", "horizontal", "vertical"] },
     rotation: { enabled: false, values: ["0", "120", "240"] },
     shapeCount: { enabled: false, values: ["1", "2", "3"] },
+    fillPattern: {
+      enabled: false,
+      values: ["solid", "hatched", "dotted", "crossHatch"],
+    },
   },
   grid: {
     rows: 3,
@@ -222,6 +240,7 @@ export function enabledAttributes(
     "innerLine",
     "rotation",
     "shapeCount",
+    "fillPattern",
   ];
   return keys.filter((k) => cfg.attributes[k].enabled);
 }

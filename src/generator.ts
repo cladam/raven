@@ -14,6 +14,7 @@ const ALL_ATTR_NAMES = [
   "innerLine",
   "rotation",
   "shapeCount",
+  "fillPattern",
 ] as const;
 
 // ---- Utility helpers ----
@@ -158,7 +159,7 @@ export function generateDistributionMatrix(): Matrix {
 // ---- Distractor generation ----
 
 function cellKey(c: CellData): string {
-  return `${c.shape}|${c.color}|${c.size}|${c.innerLine}|${c.rotation}|${c.shapeCount}`;
+  return `${c.shape}|${c.color}|${c.size}|${c.innerLine}|${c.rotation}|${c.shapeCount}|${c.fillPattern}`;
 }
 
 /**
