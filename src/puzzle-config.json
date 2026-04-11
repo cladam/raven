@@ -27,7 +27,7 @@
       "values": ["none", "horizontal", "vertical"]
     },
     "rotation": {
-      "enabled": false,
+      "enabled": true,
       "values": ["0", "120", "240"]
     },
     "shapeCount": {
