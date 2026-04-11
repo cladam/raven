@@ -11,6 +11,9 @@ export interface AttributesConfig {
   shape: AttributeConfig;
   color: AttributeConfig;
   size: AttributeConfig;
+  innerLine: AttributeConfig;
+  rotation: AttributeConfig;
+  shapeCount: AttributeConfig;
 }
 
 // ---- Grid types ----
@@ -82,6 +85,8 @@ export interface RenderingConfig {
   sizeScales: Record<string, number>;
   colorMap: Record<string, ColorEntry>;
   strokeWidth: number;
+  innerLineStrokeWidth: number;
+  innerLineColor: string;
 }
 
 // ---- Top-level config ----
@@ -103,6 +108,9 @@ const defaults: PuzzleConfig = {
     shape: { enabled: true, values: ["circle", "square", "triangle"] },
     color: { enabled: true, values: ["black", "grey", "white"] },
     size: { enabled: true, values: ["small", "medium", "large"] },
+    innerLine: { enabled: false, values: ["none", "horizontal", "vertical"] },
+    rotation: { enabled: false, values: ["0", "120", "240"] },
+    shapeCount: { enabled: false, values: ["1", "2", "3"] },
   },
   grid: {
     rows: 3,
@@ -164,6 +172,8 @@ const defaults: PuzzleConfig = {
       white: { fill: "#ffffff", stroke: "#333333" },
     },
     strokeWidth: 2,
+    innerLineStrokeWidth: 1.5,
+    innerLineColor: "#444444",
   },
 };
 
@@ -205,7 +215,14 @@ function deepMerge<T extends Record<string, unknown>>(
 export function enabledAttributes(
   cfg: PuzzleConfig,
 ): Array<keyof AttributesConfig> {
-  const keys: Array<keyof AttributesConfig> = ["shape", "color", "size"];
+  const keys: Array<keyof AttributesConfig> = [
+    "shape",
+    "color",
+    "size",
+    "innerLine",
+    "rotation",
+    "shapeCount",
+  ];
   return keys.filter((k) => cfg.attributes[k].enabled);
 }
 

@@ -1,0 +1,27 @@
+{
+  "task": "Add attribute layering (internal lines, rotation, count) for Mensa-level puzzles",
+  "branch": "main",
+  "started_at": "2026-04-11T19:22:30.857760+00:00",
+  "notes": [
+    {
+      "message": "Current state: 3 attributes (shape, color, size) each with 3 values, distributed via independent Latin squares. Single shape per cell. Goal: add 2-3 new overlay attributes (innerLine pattern, rotation, shapeCount) so a cell can encode multiple rules simultaneously — the hallmark of hard RPM items.",
+      "timestamp": "2026-04-11T19:22:46.788442+00:00"
+    },
+    {
+      "message": "Design decisions: (1) innerLine — 3 values: none/horizontal/vertical drawn inside the shape. (2) rotation — 3 values: 0°/120°/240° applied as CSS/SVG transform. (3) shapeCount — 3 values: 1/2/3 shapes stacked in the cell. All optional via config.enabled. Generator already handles N attributes with Latin squares — just need to extend the type system and renderer.",
+      "timestamp": "2026-04-11T19:22:56.961991+00:00"
+    },
+    {
+      "message": "Plan: (A) Extend types.ts — add InnerLineType, RotationType, ShapeCountType, extend CellData & AttributeName. (B) Extend config.ts — add attribute configs with enabled:false defaults, add rendering params. (C) Extend generator.ts — make Latin square generation dynamic over all enabled attrs. (D) Extend ShapeCell.tsx — render inner lines, apply rotation transforms, support multi-shape layout. (E) Update puzzle-config.json with new defaults.",
+      "timestamp": "2026-04-11T19:23:05.732751+00:00"
+    },
+    {
+      "message": "Implementation complete. All 5 files updated: types.ts (new InnerLineType, RotationType, ShapeCountType + extended CellData), config.ts (AttributesConfig + RenderingConfig + enabledAttributes extended), puzzle-config.json (3 new attrs disabled by default + rendering params), generator.ts (dynamic ALL_ATTR_NAMES loop in matrix gen + cellKey + randomDistractors), ShapeCell.tsx (renderInnerLine + renderSingleShape + multi-shape layout). TypeScript compiles clean, vite build passes.",
+      "timestamp": "2026-04-11T19:28:40.943495+00:00"
+    },
+    {
+      "message": "Backward-compatible: all 3 new attributes default to enabled:false, so existing puzzles render identically. To activate Mensa-level layering, flip any combination of innerLine/rotation/shapeCount to enabled:true in puzzle-config.json. Each enabled attribute adds an independent Latin-square dimension the solver must track simultaneously.",
+      "timestamp": "2026-04-11T19:28:52.499940+00:00"
+    }
+  ]
+}

@@ -11,6 +11,18 @@
     "size": {
       "enabled": true,
       "values": ["small", "medium", "large"]
+    },
+    "innerLine": {
+      "enabled": false,
+      "values": ["none", "horizontal", "vertical"]
+    },
+    "rotation": {
+      "enabled": false,
+      "values": ["0", "120", "240"]
+    },
+    "shapeCount": {
+      "enabled": false,
+      "values": ["1", "2", "3"]
     }
   },
 
@@ -82,6 +94,8 @@
       "grey": { "fill": "#999999", "stroke": "#666666" },
       "white": { "fill": "#ffffff", "stroke": "#333333" }
     },
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "innerLineStrokeWidth": 1.5,
+    "innerLineColor": "#444444"
   }
 }

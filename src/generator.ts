@@ -6,6 +6,16 @@ import { CellData, Matrix, AnswerOption, Puzzle } from "./types";
 // A permutation is an ordering of indices, length === grid.cols
 type Permutation = number[];
 
+/** All attribute names (enabled and disabled) used for matrix & distractor generation. */
+const ALL_ATTR_NAMES = [
+  "shape",
+  "color",
+  "size",
+  "innerLine",
+  "rotation",
+  "shapeCount",
+] as const;
+
 // ---- Utility helpers ----
 
 function pickRandom<T>(arr: T[]): T {
@@ -133,15 +143,12 @@ export function generateDistributionMatrix(): Matrix {
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const shapeIdx = squares["shape"] ? squares["shape"][row][col] : 0;
-      const colorIdx = squares["color"] ? squares["color"][row][col] : 0;
-      const sizeIdx = squares["size"] ? squares["size"][row][col] : 0;
-
-      cells.push({
-        shape: attrs.shape.values[shapeIdx] as CellData["shape"],
-        color: attrs.color.values[colorIdx] as CellData["color"],
-        size: attrs.size.values[sizeIdx] as CellData["size"],
-      });
+      const cell: Record<string, string> = {};
+      for (const attr of ALL_ATTR_NAMES) {
+        const idx = squares[attr] ? squares[attr][row][col] : 0;
+        cell[attr] = attrs[attr].values[idx];
+      }
+      cells.push(cell as unknown as CellData);
     }
   }
 
@@ -151,7 +158,7 @@ export function generateDistributionMatrix(): Matrix {
 // ---- Distractor generation ----
 
 function cellKey(c: CellData): string {
-  return `${c.shape}|${c.color}|${c.size}`;
+  return `${c.shape}|${c.color}|${c.size}|${c.innerLine}|${c.rotation}|${c.shapeCount}`;
 }
 
 /**
@@ -223,14 +230,13 @@ function randomCombinationDistractors(
 
   while (result.length < count && attempts < maxAttempts) {
     attempts++;
-    const cell: CellData = {
-      shape: pickRandom(attrs.shape.values) as CellData["shape"],
-      color: pickRandom(attrs.color.values) as CellData["color"],
-      size: pickRandom(attrs.size.values) as CellData["size"],
-    };
-    const k = cellKey(cell);
+    const cell: Record<string, string> = {};
+    for (const attr of ALL_ATTR_NAMES) {
+      cell[attr] = pickRandom(attrs[attr].values);
+    }
+    const k = cellKey(cell as unknown as CellData);
     if (!seen.has(k)) {
-      result.push(cell);
+      result.push(cell as unknown as CellData);
       seen.add(k);
     }
   }

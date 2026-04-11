@@ -10,6 +10,18 @@ export type ColorType = "black" | "grey" | "white";
 
 export type SizeType = "small" | "medium" | "large";
 
+// ---- Inner-line types (line pattern drawn inside the shape) ----
+
+export type InnerLineType = "none" | "horizontal" | "vertical" | "diagonal";
+
+// ---- Rotation types (rotation in degrees) ----
+
+export type RotationType = "0" | "120" | "240";
+
+// ---- Shape-count types (number of shape copies in the cell) ----
+
+export type ShapeCountType = "1" | "2" | "3";
+
 // ---- Cell ----
 
 /** A single cell in the matrix grid. */
@@ -17,6 +29,9 @@ export interface CellData {
   shape: ShapeType;
   color: ColorType;
   size: SizeType;
+  innerLine: InnerLineType;
+  rotation: RotationType;
+  shapeCount: ShapeCountType;
 }
 
 // ---- Matrix ----
@@ -48,4 +63,10 @@ export interface Puzzle {
 // ---- Attribute helpers ----
 
 /** The attribute dimensions that can be toggled on/off in config. */
-export type AttributeName = "shape" | "color" | "size";
+export type AttributeName =
+  | "shape"
+  | "color"
+  | "size"
+  | "innerLine"
+  | "rotation"
+  | "shapeCount";
