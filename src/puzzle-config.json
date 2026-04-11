@@ -27,7 +27,7 @@
       "values": ["none", "horizontal", "vertical"]
     },
     "rotation": {
-      "enabled": true,
+      "enabled": false,
       "values": ["0", "120", "240"]
     },
     "shapeCount": {
@@ -35,7 +35,7 @@
       "values": ["1", "2", "3"]
     },
     "fillPattern": {
-      "enabled": false,
+      "enabled": true,
       "values": ["solid", "hatched", "dotted", "crossHatch"]
     }
   },
