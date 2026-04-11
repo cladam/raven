@@ -1,19 +1,15 @@
 {
-  "task": "Expand shape vocabulary and add Raven-authentic visual elements (diamond, pentagon, hexagon, star, cross, arrow + hatching/dots/cross-hatch fill patterns)",
+  "task": "Fix: matrix only uses first N values — need random subset selection per puzzle",
   "branch": "main",
-  "started_at": "2026-04-11T19:47:46.572027+00:00",
+  "started_at": "2026-04-11T20:06:18.498910+00:00",
   "notes": [
     {
-      "message": "Current shapes: circle, square, triangle (3). Real Raven matrices use ~9 shapes and overlay patterns like hatching/dots. Plan: (1) Add 6 new shapes: diamond, pentagon, hexagon, star, cross, arrow. (2) Add a new 'fillPattern' attribute with values: solid, hatched, dotted, crossHatch — drawn via SVG <pattern> defs clipped to the shape. (3) Increase innerLine to include 'cross' (both H+V). This gives us 9 shapes × 4 fills × 3 colors × 3 sizes × 4 inner-lines × 3 rotations × 3 counts = massive combinatorial space.",
-      "timestamp": "2026-04-11T19:47:57.060290+00:00"
+      "message": "Root cause: generateLatinSquare(3,3) produces permutations of [0,1,2]. With 9 shape values, only circle/square/triangle (indices 0-2) ever appear in the matrix. Distractors use the full list though, so new shapes appear only as wrong answers. Fix: for each enabled attribute, randomly pick cols-many values from the full list, then Latin-square over those. This also makes distractors use only the same subset (for single-swap) to keep puzzles solvable.",
+      "timestamp": "2026-04-11T20:06:26.806540+00:00"
     },
     {
-      "message": "Architecture: shapes are pure SVG path functions — no images needed. fillPattern will use SVG <defs><pattern> elements rendered once per cell, with the shape using fill='url(#patternId)'. The pattern tiles lines/dots/crosshatch. Config stays flexible: default puzzle-config.json keeps only 3 shapes enabled to preserve the 3×3 Latin square, but users can pick any subset of 3+ shapes for their grid size.",
-      "timestamp": "2026-04-11T19:48:12.021337+00:00"
-    },
-    {
-      "message": "Implementation complete. (1) types.ts: ShapeType expanded to 9 (circle/square/triangle/diamond/pentagon/hexagon/star/cross/arrow), InnerLineType gained 'cross', added FillPatternType (solid/hatched/dotted/crossHatch), CellData+AttributeName extended. (2) config.ts: shape defaults now list all 9, fillPattern added (disabled), enabledAttributes knows about fillPattern. (3) puzzle-config.json: mirrors config.ts. (4) generator.ts: ALL_ATTR_NAMES+cellKey include fillPattern. (5) ShapeCell.tsx: all shapes via SVG path builders, SVG <pattern>+<clipPath> defs for fill textures, cross inner-line, renderSingleShape composes everything. tsc+vite build clean.",
-      "timestamp": "2026-04-11T19:52:03.498824+00:00"
+      "message": "Fix applied: added selectValueSubsets() that picks N random values from each attribute's full list (where N = grid cols). generateDistributionMatrix now returns { matrix, subsets } and maps Latin-square indices through the random subset. multiSwapDistractors and randomCombinationDistractors now receive subsets so they draw from the puzzle's vocabulary. singleSwapDistractors still uses the full value list for visually distinct wrong answers. tsc+vite build clean.",
+      "timestamp": "2026-04-11T20:13:21.757953+00:00"
     }
   ]
 }
