@@ -219,18 +219,30 @@ function cellKey(c: CellData): string {
 
 /**
  * Build distractors by swapping a single enabled attribute at a time.
- * Uses the full value list so distractors can include values not in the
- * current puzzle's subset -- making them visually distinct wrong answers.
+ * First swaps within the puzzle's value subset (always visually meaningful),
+ * then adds from the full config list for variety -- but only for enabled
+ * attributes so disabled dimensions never produce invisible differences.
  */
 function singleSwapDistractors(
   correct: CellData,
   seen: Set<string>,
+  subsets: ValueSubsets,
 ): CellData[] {
   const result: CellData[] = [];
   const active = enabledAttributes(config);
   const attrs = config.attributes;
 
   for (const attr of active) {
+    // Primary: swap within the puzzle's subset (always visually meaningful)
+    for (const val of subsets[attr]) {
+      const cell: CellData = { ...correct, [attr]: val };
+      const k = cellKey(cell);
+      if (!seen.has(k)) {
+        result.push(cell);
+        seen.add(k);
+      }
+    }
+    // Secondary: also try the full value list for out-of-subset variety
     for (const val of attrs[attr].values) {
       const cell: CellData = { ...correct, [attr]: val };
       const k = cellKey(cell);
@@ -322,7 +334,7 @@ export function generateOptions(
 
   switch (strategy) {
     case "single-swap-only":
-      pool = singleSwapDistractors(correct, seen);
+      pool = singleSwapDistractors(correct, seen, subsets);
       break;
 
     case "random-combination":
@@ -332,7 +344,7 @@ export function generateOptions(
     case "single-swap-then-multi-swap":
     default:
       pool = [
-        ...singleSwapDistractors(correct, seen),
+        ...singleSwapDistractors(correct, seen, subsets),
         ...multiSwapDistractors(correct, seen, subsets),
       ];
       break;

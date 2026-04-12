@@ -35,7 +35,7 @@
       "values": ["1", "2", "3"]
     },
     "fillPattern": {
-      "enabled": true,
+      "enabled": false,
       "values": ["solid", "hatched", "dotted", "crossHatch"]
     }
   },

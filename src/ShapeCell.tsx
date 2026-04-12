@@ -169,6 +169,20 @@ function arrowPath(cx: number, cy: number, r: number): string {
 // ---- SVG fill-pattern definitions ----
 
 /**
+ * Choose a pattern color that contrasts with the shape's fill.
+ * Dark fills get light patterns; light fills get dark patterns.
+ */
+function contrastColor(fillColor: string): string {
+  // Parse hex to perceived brightness (rough luma)
+  const hex = fillColor.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luma < 140 ? "#cccccc" : "#333333";
+}
+
+/**
  * Returns a <defs> block containing a <pattern> and a <clipPath> so that the
  * shape can be filled with a tiled texture (hatching, dots, cross-hatch).
  *
@@ -179,9 +193,11 @@ function renderFillPatternDefs(
   patternId: string,
   clipId: string,
   pathD: string,
-  strokeColor: string,
+  fillColor: string,
 ): React.ReactNode {
   if (patternType === "solid") return null;
+
+  const patternColor = contrastColor(fillColor);
 
   const patternSize = 6;
   let patternContent: React.ReactNode = null;
@@ -194,7 +210,7 @@ function renderFillPatternDefs(
           y1={0}
           x2={patternSize}
           y2={patternSize}
-          stroke={strokeColor}
+          stroke={patternColor}
           strokeWidth={1}
         />
       );
@@ -206,7 +222,7 @@ function renderFillPatternDefs(
           cx={patternSize / 2}
           cy={patternSize / 2}
           r={1.1}
-          fill={strokeColor}
+          fill={patternColor}
         />
       );
       break;
@@ -219,7 +235,7 @@ function renderFillPatternDefs(
             y1={0}
             x2={patternSize}
             y2={patternSize}
-            stroke={strokeColor}
+            stroke={patternColor}
             strokeWidth={0.8}
           />
           <line
@@ -227,7 +243,7 @@ function renderFillPatternDefs(
             y1={0}
             x2={0}
             y2={patternSize}
-            stroke={strokeColor}
+            stroke={patternColor}
             strokeWidth={0.8}
           />
         </>
@@ -369,7 +385,7 @@ function renderSingleShape(
             patternId,
             clipId,
             pathD,
-            strokeColor,
+            fillColor,
           )}
         </defs>
       )}
