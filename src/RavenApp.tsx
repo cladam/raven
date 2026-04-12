@@ -12,7 +12,7 @@ interface PuzzleWithMissing extends Puzzle {
 
 const RavenApp: React.FC = () => {
   const [puzzle, setPuzzle] = useState<PuzzleWithMissing>(() =>
-    generatePuzzle(),
+    generatePuzzle(config.gameMode.default as GameModeId),
   );
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
@@ -105,7 +105,7 @@ const RavenApp: React.FC = () => {
       setSessionComplete(true);
       return;
     }
-    setPuzzle(generatePuzzle());
+    setPuzzle(generatePuzzle(modeId));
     setPuzzleNum((n) => n + 1);
     setFeedback("idle");
     setSelectedId(null);
@@ -191,19 +191,14 @@ const RavenApp: React.FC = () => {
       return;
     }
     setTotal((t) => t + 1);
-    setPuzzle(generatePuzzle());
+    setPuzzle(generatePuzzle(modeId));
     setPuzzleNum((n) => n + 1);
     setFeedback("idle");
     setSelectedId(null);
   }, [scoring, clearTimer, hasLimit, puzzleNum, maxPuzzles]);
 
-  const handleModeChange = useCallback((newMode: GameModeId) => {
-    setModeId(newMode);
-    setShowModeSelector(false);
-    resetSession();
-  }, []);
-
-  const resetSession = useCallback(() => {
+  const resetSession = useCallback((overrideMode?: GameModeId) => {
+    const effectiveMode = overrideMode ?? modeId;
     setScore(0);
     setTotal(0);
     setPuzzleNum(1);
@@ -212,14 +207,22 @@ const RavenApp: React.FC = () => {
     setFeedback("idle");
     setSelectedId(null);
     setSessionComplete(false);
-    setPuzzle(generatePuzzle());
-  }, []);
+    setPuzzle(generatePuzzle(effectiveMode));
+  }, [modeId]);
+
+  const handleModeChange = useCallback((newMode: GameModeId) => {
+    setModeId(newMode);
+    setShowModeSelector(false);
+    resetSession(newMode);
+  }, [resetSession]);
+
 
   // ---- Layout calculations ----
 
   const totalCells = grid.rows * grid.cols;
   const gridColsStyle = `repeat(${grid.cols}, 1fr)`;
-  const optionCols = Math.min(puzzle.options.length, 3);
+  const optionCols =
+    puzzle.options.length > 6 ? 4 : Math.min(puzzle.options.length, 3);
   const optionColsStyle = `repeat(${optionCols}, 1fr)`;
 
   // Timer bar fraction (1 = full, 0 = empty)
@@ -290,7 +293,7 @@ const RavenApp: React.FC = () => {
           </div>
 
           <div className="session-actions">
-            <button className="play-again-button" onClick={resetSession}>
+            <button className="play-again-button" onClick={() => resetSession()}>
               Play Again
             </button>
             <button

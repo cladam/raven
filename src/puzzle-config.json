@@ -56,27 +56,49 @@
     "modes": {
       "infinite": {
         "label": "∞ Infinite",
-        "description": "No time limit — solve at your own pace",
+        "description": "No time limit — shape, colour & size",
         "timeLimitMs": 0,
-        "maxPuzzles": 0
+        "maxPuzzles": 0,
+        "enabledAttributes": ["shape", "color", "size"],
+        "optionCount": 6
       },
       "comfortable": {
         "label": "🟢 Comfortable",
-        "description": "30 s × 12 puzzles — enough to reason carefully",
+        "description": "30 s × 12 — adds fill pattern",
         "timeLimitMs": 30000,
-        "maxPuzzles": 12
+        "maxPuzzles": 12,
+        "enabledAttributes": ["shape", "color", "size", "fillPattern"],
+        "optionCount": 6
       },
       "standard": {
         "label": "🟡 Standard",
-        "description": "20 s × 12 puzzles — speeded research protocol",
+        "description": "20 s × 12 — adds inner line & fill pattern",
         "timeLimitMs": 20000,
-        "maxPuzzles": 12
+        "maxPuzzles": 12,
+        "enabledAttributes": [
+          "shape",
+          "color",
+          "size",
+          "fillPattern",
+          "innerLine"
+        ],
+        "optionCount": 6
       },
       "challenge": {
         "label": "🔴 Challenge",
-        "description": "10 s × 12 puzzles — forces pattern recognition",
+        "description": "10 s × 12 — all attributes enabled",
         "timeLimitMs": 10000,
-        "maxPuzzles": 12
+        "maxPuzzles": 12,
+        "enabledAttributes": [
+          "shape",
+          "color",
+          "size",
+          "fillPattern",
+          "innerLine",
+          "rotation",
+          "shapeCount"
+        ],
+        "optionCount": 8
       }
     }
   },

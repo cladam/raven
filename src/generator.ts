@@ -1,4 +1,4 @@
-import config, { enabledAttributes, missingCellIndex } from "./config";
+import config, { enabledAttributesForMode, optionCountForMode, missingCellIndex, GameModeId, AttributesConfig } from "./config";
 import { CellData, Matrix, AnswerOption, Puzzle } from "./types";
 
 // ---- Types internal to the generator ----
@@ -144,9 +144,9 @@ function generateLatinSquare(rows: number, cols: number): Permutation[] {
  * For disabled attributes, we just take the first value (they collapse to a
  * single constant anyway).
  */
-function selectValueSubsets(gridSize: number): ValueSubsets {
+function selectValueSubsets(gridSize: number, activeAttrs: Array<keyof AttributesConfig>): ValueSubsets {
   const attrs = config.attributes;
-  const active = new Set(enabledAttributes(config));
+  const active = new Set<string>(activeAttrs);
   const subsets: ValueSubsets = {};
 
   for (const attr of ALL_ATTR_NAMES) {
@@ -179,15 +179,15 @@ function selectValueSubsets(gridSize: number): ValueSubsets {
  * For *disabled* attributes every cell gets the first value in the list
  * (effectively making that dimension invisible).
  */
-export function generateDistributionMatrix(): {
+export function generateDistributionMatrix(activeAttrs: Array<keyof AttributesConfig>): {
   matrix: Matrix;
   subsets: ValueSubsets;
 } {
   const { rows, cols } = config.grid;
-  const active = enabledAttributes(config);
+  const active = activeAttrs;
 
   // Pick a random subset of values for each attribute
-  const subsets = selectValueSubsets(cols);
+  const subsets = selectValueSubsets(cols, activeAttrs);
 
   // Generate one Latin square per enabled attribute
   const squares: Record<string, Permutation[]> = {};
@@ -227,9 +227,10 @@ function singleSwapDistractors(
   correct: CellData,
   seen: Set<string>,
   subsets: ValueSubsets,
+  activeAttrs: Array<keyof AttributesConfig>,
 ): CellData[] {
   const result: CellData[] = [];
-  const active = enabledAttributes(config);
+  const active = activeAttrs;
   const attrs = config.attributes;
 
   for (const attr of active) {
@@ -264,9 +265,10 @@ function multiSwapDistractors(
   correct: CellData,
   seen: Set<string>,
   subsets: ValueSubsets,
+  activeAttrs: Array<keyof AttributesConfig>,
 ): CellData[] {
   const result: CellData[] = [];
-  const active = enabledAttributes(config);
+  const active = activeAttrs;
 
   for (let i = 0; i < active.length; i++) {
     for (let j = i + 1; j < active.length; j++) {
@@ -322,9 +324,11 @@ export function generateOptions(
   matrix: Matrix,
   missing: number,
   subsets: ValueSubsets,
+  activeAttrs: Array<keyof AttributesConfig>,
+  optionCount: number,
 ): AnswerOption[] {
   const correct = matrix[missing];
-  const needed = config.options.count - 1;
+  const needed = optionCount - 1;
   const strategy = config.options.distractorStrategy;
 
   const seen = new Set<string>();
@@ -334,7 +338,7 @@ export function generateOptions(
 
   switch (strategy) {
     case "single-swap-only":
-      pool = singleSwapDistractors(correct, seen, subsets);
+      pool = singleSwapDistractors(correct, seen, subsets, activeAttrs);
       break;
 
     case "random-combination":
@@ -344,8 +348,8 @@ export function generateOptions(
     case "single-swap-then-multi-swap":
     default:
       pool = [
-        ...singleSwapDistractors(correct, seen, subsets),
-        ...multiSwapDistractors(correct, seen, subsets),
+        ...singleSwapDistractors(correct, seen, subsets, activeAttrs),
+        ...multiSwapDistractors(correct, seen, subsets, activeAttrs),
       ];
       break;
   }
@@ -378,9 +382,11 @@ export function generateOptions(
 /**
  * Generate a complete puzzle: matrix + missing cell index + answer options.
  */
-export function generatePuzzle(): Puzzle & { missingIndex: number } {
-  const { matrix, subsets } = generateDistributionMatrix();
+export function generatePuzzle(modeId: GameModeId): Puzzle & { missingIndex: number } {
+  const activeAttrs = enabledAttributesForMode(config, modeId);
+  const optCount = optionCountForMode(config, modeId);
+  const { matrix, subsets } = generateDistributionMatrix(activeAttrs);
   const missing = missingCellIndex(config);
-  const options = generateOptions(matrix, missing, subsets);
+  const options = generateOptions(matrix, missing, subsets, activeAttrs, optCount);
   return { matrix, options, missingIndex: missing };
 }

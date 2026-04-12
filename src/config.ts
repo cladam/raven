@@ -46,6 +46,10 @@ export interface GameModeEntry {
   description: string;
   timeLimitMs: number; // 0 = no limit (infinite)
   maxPuzzles: number; // 0 = unlimited
+  /** Which attributes are enabled for this mode. Overrides the global attribute toggles. */
+  enabledAttributes: Array<keyof AttributesConfig>;
+  /** Number of answer options for this mode. Overrides the global options.count. */
+  optionCount: number;
 }
 
 export type GameModeId = "infinite" | "comfortable" | "standard" | "challenge";
@@ -144,27 +148,49 @@ const defaults: PuzzleConfig = {
     modes: {
       infinite: {
         label: "∞ Infinite",
-        description: "No time limit — solve at your own pace",
+        description: "No time limit — shape, colour & size",
         timeLimitMs: 0,
         maxPuzzles: 0,
+        enabledAttributes: ["shape", "color", "size"],
+        optionCount: 6,
       },
       comfortable: {
         label: "🟢 Comfortable",
-        description: "30 s × 12 puzzles — enough to reason carefully",
+        description: "30 s × 12 — adds fill pattern",
         timeLimitMs: 30000,
         maxPuzzles: 12,
+        enabledAttributes: ["shape", "color", "size", "fillPattern"],
+        optionCount: 6,
       },
       standard: {
         label: "🟡 Standard",
-        description: "20 s × 12 puzzles — speeded research protocol",
+        description: "20 s × 12 — adds inner line & fill pattern",
         timeLimitMs: 20000,
         maxPuzzles: 12,
+        enabledAttributes: [
+          "shape",
+          "color",
+          "size",
+          "fillPattern",
+          "innerLine",
+        ],
+        optionCount: 6,
       },
       challenge: {
         label: "🔴 Challenge",
-        description: "10 s × 12 puzzles — forces pattern recognition",
+        description: "10 s × 12 — all attributes enabled",
         timeLimitMs: 10000,
         maxPuzzles: 12,
+        enabledAttributes: [
+          "shape",
+          "color",
+          "size",
+          "fillPattern",
+          "innerLine",
+          "rotation",
+          "shapeCount",
+        ],
+        optionCount: 8,
       },
     },
   },
@@ -243,6 +269,32 @@ export function enabledAttributes(
     "fillPattern",
   ];
   return keys.filter((k) => cfg.attributes[k].enabled);
+}
+
+/**
+ * Returns the enabled attributes for a specific game mode.
+ * Uses the mode's own enabledAttributes list, falling back to the global config.
+ */
+export function enabledAttributesForMode(
+  cfg: PuzzleConfig,
+  modeId: GameModeId,
+): Array<keyof AttributesConfig> {
+  const mode = cfg.gameMode.modes[modeId];
+  if (mode?.enabledAttributes?.length) {
+    return mode.enabledAttributes;
+  }
+  return enabledAttributes(cfg);
+}
+
+/**
+ * Returns the option count for a specific game mode.
+ */
+export function optionCountForMode(
+  cfg: PuzzleConfig,
+  modeId: GameModeId,
+): number {
+  const mode = cfg.gameMode.modes[modeId];
+  return mode?.optionCount ?? cfg.options.count;
 }
 
 /**
